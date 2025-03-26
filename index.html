@@ -156,10 +156,10 @@
 
       drawGlow(earth.x, earth.y, 14, "#3fa9f5");
       drawLabel("Earth", earth.x, earth.y);
-      ctx.strokeStyle = "#333";
-      ctx.beginPath(); ctx.arc(earth.x, earth.y, moonR, 0, 2 * Math.PI); ctx.stroke();
       drawGlow(moon.x, moon.y, 5, "#aaa");
       drawLabel("Moon", moon.x, moon.y);
+      ctx.strokeStyle = "#333";
+      ctx.beginPath(); ctx.arc(earth.x, earth.y, moonR, 0, 2 * Math.PI); ctx.stroke();
 
       drawGlow(mars.x, mars.y, 14, "#ed2534");
       drawLabel("Mars", mars.x, mars.y);
