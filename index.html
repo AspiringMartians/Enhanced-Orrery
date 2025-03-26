@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Orbit Map - Fading Trails</title>
+  <title>Orbit Map - Directional Fading Trails</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
   <style>
     html, body {
@@ -90,15 +90,14 @@
     function storeTrail(id, pos) {
       if (!trailMap[id]) trailMap[id] = [];
       trailMap[id].unshift(pos);
-      if (trailMap[id].length > 30) trailMap[id].pop();
+      if (trailMap[id].length > 40) trailMap[id].pop();
     }
 
-    function drawTrail(id, color) {
-      if (!trailMap[id] || trailMap[id].length < 2) return;
-      for (let i = 0; i < trailMap[id].length - 1; i++) {
-        const p1 = trailMap[id][i];
-        const p2 = trailMap[id][i + 1];
-        const alpha = 1 - i / trailMap[id].length;
+    function drawFadingPath(trail, color) {
+      for (let i = 0; i < trail.length - 1; i++) {
+        const p1 = trail[i];
+        const p2 = trail[i + 1];
+        const alpha = 1 - i / trail.length;
         ctx.strokeStyle = `rgba(${color},${alpha})`;
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
@@ -120,7 +119,7 @@
       const phoR = 0.3 * unit;
       const deiR = 0.45 * unit;
 
-      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
       ctx.fillRect(0, 0, cw, ch);
 
       drawStars();
@@ -142,17 +141,17 @@
       const phobos = getPlanetPosition(mars.x, mars.y, phoR, 0.3189, "2025-01-01");
       const deimos = getPlanetPosition(mars.x, mars.y, deiR, 1.263, "2025-01-01");
 
-      storeTrail('earth', earth);
-      storeTrail('moon', moon);
-      storeTrail('mars', mars);
-      storeTrail('phobos', phobos);
-      storeTrail('deimos', deimos);
+      storeTrail("earth", earth);
+      storeTrail("moon", moon);
+      storeTrail("mars", mars);
+      storeTrail("phobos", phobos);
+      storeTrail("deimos", deimos);
 
-      drawTrail('earth', '63,169,245');
-      drawTrail('moon', '170,170,170');
-      drawTrail('mars', '237,37,52');
-      drawTrail('phobos', '204,204,204');
-      drawTrail('deimos', '136,136,136');
+      drawFadingPath(trailMap["earth"], "63,169,245");
+      drawFadingPath(trailMap["moon"], "170,170,170");
+      drawFadingPath(trailMap["mars"], "237,37,52");
+      drawFadingPath(trailMap["phobos"], "204,204,204");
+      drawFadingPath(trailMap["deimos"], "136,136,136");
 
       drawGlow(earth.x, earth.y, 14, "#3fa9f5");
       drawLabel("Earth", earth.x, earth.y);
