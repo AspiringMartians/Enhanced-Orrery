@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orbit Map Enhanced</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas {
+      display: block;
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="orbitCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById("orbitCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let stars = [];
+
+    function createStars(count) {
+      stars = [];
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.5,
+          speed: Math.random() * 0.1 + 0.05,
+        });
+      }
+    }
+
+    function drawStars() {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#444";
+      for (let star of stars) {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, 2 * Math.PI);
+        ctx.fill();
+        star.x -= star.speed;
+        if (star.x < 0) star.x = canvas.width;
+      }
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      createStars(150);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    const trailCanvas = document.createElement("canvas");
+    const trailCtx = trailCanvas.getContext("2d");
+    function setupTrailCanvas() {
+      trailCanvas.width = canvas.width;
+      trailCanvas.height = canvas.height;
+    }
+
+    function getPlanetPosition(cx, cy, r, days, epoch) {
+      const now = new Date();
+      const msPerDay = 86400000;
+      const d = (now - new Date(epoch)) / msPerDay;
+      const a = (2 * Math.PI * d) / days;
+      return {
+        x: cx + r * Math.cos(a),
+        y: cy + r * Math.sin(a),
+      };
+    }
+
+    function drawLabel(text, x, y) {
+      ctx.fillStyle = "#fff";
+      ctx.font = "16px 'Space Mono', monospace";
+      const w = ctx.measureText(text).width;
+      ctx.fillText(text, x - w / 2, y - 18);
+    }
+
+    function drawScene() {
+      drawStars();
+      ctx.drawImage(trailCanvas, 0, 0);
+
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const unit = Math.min(canvas.width, canvas.height) / 6;
+      const er = unit, mr = unit * 2;
+      const moonR = 0.3 * unit;
+      const phoR = 0.3 * unit;
+      const deiR = 0.45 * unit;
+
+      // Orbit paths
+      ctx.strokeStyle = "#555";
+      ctx.beginPath(); ctx.arc(cx, cy, er, 0, 2 * Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, mr, 0, 2 * Math.PI); ctx.stroke();
+
+      // Sun
+      ctx.save();
+      ctx.shadowColor = "#ffcc00";
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = "#ffcc00";
+      ctx.beginPath(); ctx.arc(cx, cy, 20, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+
+      // Earth
+      const e = getPlanetPosition(cx, cy, er, 365.25, "2025-01-01");
+      ctx.save();
+      ctx.shadowColor = "#3fa9f5";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#3fa9f5";
+      ctx.beginPath(); ctx.arc(e.x, e.y, 14, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+      drawLabel("Earth", e.x, e.y);
+
+      // Moon
+      const moon = getPlanetPosition(e.x, e.y, moonR, 27.3, "2025-01-01");
+      ctx.strokeStyle = "#333";
+      ctx.beginPath(); ctx.arc(e.x, e.y, moonR, 0, 2 * Math.PI); ctx.stroke();
+      ctx.save();
+      ctx.shadowColor = "#aaa";
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = "#aaa";
+      ctx.beginPath(); ctx.arc(moon.x, moon.y, 5, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+      drawLabel("Moon", moon.x, moon.y);
+
+      // Mars
+      const m = getPlanetPosition(cx, cy, mr, 687, "2025-01-01");
+      ctx.save();
+      ctx.shadowColor = "#ed2534";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#ed2534";
+      ctx.beginPath(); ctx.arc(m.x, m.y, 14, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+      drawLabel("Mars", m.x, m.y);
+
+      // Phobos
+      const pho = getPlanetPosition(m.x, m.y, phoR, 0.3189, "2025-01-01");
+      ctx.strokeStyle = "#333";
+      ctx.beginPath(); ctx.arc(m.x, m.y, phoR, 0, 2 * Math.PI); ctx.stroke();
+      ctx.save();
+      ctx.shadowColor = "#ccc";
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = "#ccc";
+      ctx.beginPath(); ctx.arc(pho.x, pho.y, 4, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+      drawLabel("Phobos", pho.x, pho.y);
+
+      // Deimos
+      const dei = getPlanetPosition(m.x, m.y, deiR, 1.263, "2025-01-01");
+      ctx.beginPath(); ctx.arc(m.x, m.y, deiR, 0, 2 * Math.PI); ctx.stroke();
+      ctx.save();
+      ctx.shadowColor = "#888";
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = "#888";
+      ctx.beginPath(); ctx.arc(dei.x, dei.y, 4, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+      drawLabel("Deimos", dei.x, dei.y);
+
+      // Date & Time
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const mnt = now.getMinutes().toString().padStart(2, '0');
+      const d = now.getDate().toString().padStart(2, '0');
+      const mn = (now.getMonth() + 1).toString().padStart(2, '0');
+      const y = now.getFullYear();
+      ctx.fillStyle = "#ccc";
+      ctx.font = "42px 'Space Mono', monospace";
+      ctx.fillText(`${y}-${mn}-${d} ${h}:${mnt}`, 20, canvas.height - 40);
+
+      // Trail Effects
+      trailCtx.fillStyle = "rgba(0,0,0,0.1)";
+      trailCtx.fillRect(0, 0, trailCanvas.width, trailCanvas.height);
+      [e, moon, m, pho, dei].forEach(p => {
+        trailCtx.fillStyle = "rgba(255,255,255,0.2)";
+        trailCtx.beginPath();
+        trailCtx.arc(p.x, p.y, 1.5, 0, 2 * Math.PI);
+        trailCtx.fill();
+      });
+    }
+
+    function animate() {
+      drawScene();
+      requestAnimationFrame(animate);
+    }
+
+    setupTrailCanvas();
+    document.fonts.ready.then(() => {
+      animate();
+    });
+  </script>
+</body>
+</html>
