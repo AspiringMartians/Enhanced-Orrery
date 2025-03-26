@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Enhanced Orbit Map</title>
+  <title>Orbit Map - All In One</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
   <style>
     html, body {
@@ -16,98 +16,93 @@
       overflow: hidden;
     }
     canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
       display: block;
+      background: black;
     }
   </style>
 </head>
 <body>
-  <canvas id="stars"></canvas>
-  <canvas id="trails"></canvas>
-  <canvas id="planets"></canvas>
+  <canvas id="orbitCanvas"></canvas>
   <script>
-    const starCanvas = document.getElementById("stars");
-    const trailCanvas = document.getElementById("trails");
-    const planetCanvas = document.getElementById("planets");
-
-    const starCtx = starCanvas.getContext("2d");
-    const trailCtx = trailCanvas.getContext("2d");
-    const planetCtx = planetCanvas.getContext("2d");
-
-    function resizeAll() {
-      [starCanvas, trailCanvas, planetCanvas].forEach(c => {
-        c.width = window.innerWidth;
-        c.height = window.innerHeight;
-      });
-      generateStars();
-    }
-
-    window.addEventListener("resize", resizeAll);
-    resizeAll();
+    const canvas = document.getElementById("orbitCanvas");
+    const ctx = canvas.getContext("2d");
 
     let stars = [];
 
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      generateStars();
+    }
+
     function generateStars() {
       stars = [];
-      for (let i = 0; i < 150; i++) {
+      for (let i = 0; i < 200; i++) {
         stars.push({
-          x: Math.random() * starCanvas.width,
-          y: Math.random() * starCanvas.height,
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
           size: Math.random() * 1.5,
-          speed: 0.05 + Math.random() * 0.1,
+          speed: 0.02 + Math.random() * 0.05,
         });
       }
     }
 
     function drawStars() {
-      starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
-      starCtx.fillStyle = "#fff";
-      stars.forEach(star => {
+      for (let star of stars) {
+        ctx.fillStyle = "#444";
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, 2 * Math.PI);
+        ctx.fill();
         star.x -= star.speed;
-        if (star.x < 0) star.x = starCanvas.width;
-        starCtx.beginPath();
-        starCtx.arc(star.x, star.y, star.size, 0, 2 * Math.PI);
-        starCtx.fill();
-      });
+        if (star.x < 0) star.x = canvas.width;
+      }
     }
 
     function getPlanetPosition(cx, cy, r, days, epoch) {
       const now = new Date();
       const msPerDay = 86400000;
       const d = (now - new Date(epoch)) / msPerDay;
-      const a = 2 * Math.PI * d / days;
+      const a = (2 * Math.PI * d) / days;
       return {
         x: cx + r * Math.cos(a),
         y: cy + r * Math.sin(a),
       };
     }
 
-    function drawLabel(ctx, text, x, y) {
+    function drawLabel(text, x, y) {
       ctx.fillStyle = "#fff";
       ctx.font = "16px 'Space Mono', monospace";
       const w = ctx.measureText(text).width;
       ctx.fillText(text, x - w / 2, y - 18);
     }
 
-    function drawScene() {
-      const ctx = planetCtx;
-      ctx.clearRect(0, 0, planetCanvas.width, planetCanvas.height);
+    let trailBuffer;
 
-      const cx = planetCanvas.width / 2;
-      const cy = planetCanvas.height / 2;
-      const unit = Math.min(planetCanvas.width, planetCanvas.height) / 6;
+    function draw() {
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const cx = cw / 2;
+      const cy = ch / 2;
+      const unit = Math.min(cw, ch) / 6;
+
       const er = unit;
       const mr = 2 * unit;
       const moonR = 0.3 * unit;
       const phoR = 0.3 * unit;
       const deiR = 0.45 * unit;
 
-      ctx.strokeStyle = "#555";
+      // fade previous trails
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillRect(0, 0, cw, ch);
+
+      drawStars();
+
+      // orbit paths
+      ctx.strokeStyle = "#444";
       ctx.beginPath(); ctx.arc(cx, cy, er, 0, 2 * Math.PI); ctx.stroke();
       ctx.beginPath(); ctx.arc(cx, cy, mr, 0, 2 * Math.PI); ctx.stroke();
 
+      // Sun
       ctx.save();
       ctx.shadowColor = "#ffcc00";
       ctx.shadowBlur = 30;
@@ -121,39 +116,38 @@
       const phobos = getPlanetPosition(mars.x, mars.y, phoR, 0.3189, "2025-01-01");
       const deimos = getPlanetPosition(mars.x, mars.y, deiR, 1.263, "2025-01-01");
 
-      function drawGlowingBody(x, y, r, color, shadow) {
+      function drawGlow(x, y, r, color) {
         ctx.save();
-        ctx.shadowColor = shadow;
+        ctx.shadowColor = color;
         ctx.shadowBlur = 20;
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill();
         ctx.restore();
       }
 
-      drawGlowingBody(earth.x, earth.y, 14, "#3fa9f5", "#3fa9f5");
-      drawLabel(ctx, "Earth", earth.x, earth.y);
+      drawGlow(earth.x, earth.y, 14, "#3fa9f5");
+      drawLabel("Earth", earth.x, earth.y);
+      drawGlow(moon.x, moon.y, 5, "#aaa");
+      drawLabel("Moon", moon.x, moon.y);
+
       ctx.strokeStyle = "#333";
       ctx.beginPath(); ctx.arc(earth.x, earth.y, moonR, 0, 2 * Math.PI); ctx.stroke();
-      drawGlowingBody(moon.x, moon.y, 5, "#aaa", "#aaa");
-      drawLabel(ctx, "Moon", moon.x, moon.y);
 
-      drawGlowingBody(mars.x, mars.y, 14, "#ed2534", "#ed2534");
-      drawLabel(ctx, "Mars", mars.x, mars.y);
+      drawGlow(mars.x, mars.y, 14, "#ed2534");
+      drawLabel("Mars", mars.x, mars.y);
+
+      drawGlow(phobos.x, phobos.y, 4, "#ccc");
+      drawLabel("Phobos", phobos.x, phobos.y);
       ctx.beginPath(); ctx.arc(mars.x, mars.y, phoR, 0, 2 * Math.PI); ctx.stroke();
-      drawGlowingBody(phobos.x, phobos.y, 4, "#ccc", "#ccc");
-      drawLabel(ctx, "Phobos", phobos.x, phobos.y);
+
+      drawGlow(deimos.x, deimos.y, 4, "#888");
+      drawLabel("Deimos", deimos.x, deimos.y);
       ctx.beginPath(); ctx.arc(mars.x, mars.y, deiR, 0, 2 * Math.PI); ctx.stroke();
-      drawGlowingBody(deimos.x, deimos.y, 4, "#888", "#888");
-      drawLabel(ctx, "Deimos", deimos.x, deimos.y);
 
       // Trails
-      trailCtx.fillStyle = "rgba(0,0,0,0.2)";
-      trailCtx.fillRect(0, 0, trailCanvas.width, trailCanvas.height);
       [earth, moon, mars, phobos, deimos].forEach(p => {
-        trailCtx.fillStyle = "rgba(255,255,255,0.2)";
-        trailCtx.beginPath();
-        trailCtx.arc(p.x, p.y, 1.2, 0, 2 * Math.PI);
-        trailCtx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.2)";
+        ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, 2 * Math.PI); ctx.fill();
       });
 
       // Time
@@ -165,17 +159,14 @@
       const y = now.getFullYear();
       ctx.fillStyle = "#ccc";
       ctx.font = "42px 'Space Mono', monospace";
-      ctx.fillText(`${y}-${mn}-${d} ${h}:${mnt}`, 20, planetCanvas.height - 40);
-    }
+      ctx.fillText(`${y}-${mn}-${d} ${h}:${mnt}`, 20, canvas.height - 40);
 
-    function animate() {
-      drawStars();
-      drawScene();
-      requestAnimationFrame(animate);
+      requestAnimationFrame(draw);
     }
 
     document.fonts.ready.then(() => {
-      animate();
+      resizeCanvas();
+      draw();
     });
   </script>
 </body>
