@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Orbit Map - Directional Fading Trails</title>
+  <title>Orbit Map - Directional Gradient Trails</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
   <style>
     html, body {
@@ -93,17 +93,22 @@
       if (trailMap[id].length > 40) trailMap[id].pop();
     }
 
-    function drawFadingPath(trail, color) {
-      for (let i = 0; i < trail.length - 1; i++) {
-        const p1 = trail[i];
-        const p2 = trail[i + 1];
-        const alpha = 1 - i / trail.length;
-        ctx.strokeStyle = `rgba(${color},${alpha})`;
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
+    function drawGradientTrail(trail, color) {
+      if (!trail || trail.length < 2) return;
+      const gradient = ctx.createLinearGradient(
+        trail[trail.length - 1].x, trail[trail.length - 1].y,
+        trail[0].x, trail[0].y
+      );
+      gradient.addColorStop(0, `rgba(${color}, 0)`);
+      gradient.addColorStop(1, `rgba(${color}, 1)`);
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(trail[trail.length - 1].x, trail[trail.length - 1].y);
+      for (let i = trail.length - 2; i >= 0; i--) {
+        ctx.lineTo(trail[i].x, trail[i].y);
       }
+      ctx.stroke();
     }
 
     function draw() {
@@ -119,7 +124,7 @@
       const phoR = 0.3 * unit;
       const deiR = 0.45 * unit;
 
-      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.fillRect(0, 0, cw, ch);
 
       drawStars();
@@ -147,11 +152,11 @@
       storeTrail("phobos", phobos);
       storeTrail("deimos", deimos);
 
-      drawFadingPath(trailMap["earth"], "63,169,245");
-      drawFadingPath(trailMap["moon"], "170,170,170");
-      drawFadingPath(trailMap["mars"], "237,37,52");
-      drawFadingPath(trailMap["phobos"], "204,204,204");
-      drawFadingPath(trailMap["deimos"], "136,136,136");
+      drawGradientTrail(trailMap["earth"], "63,169,245");
+      drawGradientTrail(trailMap["moon"], "170,170,170");
+      drawGradientTrail(trailMap["mars"], "237,37,52");
+      drawGradientTrail(trailMap["phobos"], "204,204,204");
+      drawGradientTrail(trailMap["deimos"], "136,136,136");
 
       drawGlow(earth.x, earth.y, 14, "#3fa9f5");
       drawLabel("Earth", earth.x, earth.y);
