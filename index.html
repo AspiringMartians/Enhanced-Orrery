@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Orbit Map - All In One</title>
+  <title>Orbit Map - Fading Trails</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
   <style>
     html, body {
@@ -28,6 +28,7 @@
     const ctx = canvas.getContext("2d");
 
     let stars = [];
+    let trailMap = {};
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -62,10 +63,11 @@
       const now = new Date();
       const msPerDay = 86400000;
       const d = (now - new Date(epoch)) / msPerDay;
-      const a = (2 * Math.PI * d) / days;
+      const a = 2 * Math.PI * d / days;
       return {
         x: cx + r * Math.cos(a),
         y: cy + r * Math.sin(a),
+        angle: a
       };
     }
 
@@ -76,7 +78,34 @@
       ctx.fillText(text, x - w / 2, y - 18);
     }
 
-    let trailBuffer;
+    function drawGlow(x, y, r, color) {
+      ctx.save();
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+    }
+
+    function storeTrail(id, pos) {
+      if (!trailMap[id]) trailMap[id] = [];
+      trailMap[id].unshift(pos);
+      if (trailMap[id].length > 30) trailMap[id].pop();
+    }
+
+    function drawTrail(id, color) {
+      if (!trailMap[id] || trailMap[id].length < 2) return;
+      for (let i = 0; i < trailMap[id].length - 1; i++) {
+        const p1 = trailMap[id][i];
+        const p2 = trailMap[id][i + 1];
+        const alpha = 1 - i / trailMap[id].length;
+        ctx.strokeStyle = `rgba(${color},${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+    }
 
     function draw() {
       const cw = canvas.width;
@@ -91,18 +120,15 @@
       const phoR = 0.3 * unit;
       const deiR = 0.45 * unit;
 
-      // fade previous trails
-      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.fillRect(0, 0, cw, ch);
 
       drawStars();
 
-      // orbit paths
       ctx.strokeStyle = "#444";
       ctx.beginPath(); ctx.arc(cx, cy, er, 0, 2 * Math.PI); ctx.stroke();
       ctx.beginPath(); ctx.arc(cx, cy, mr, 0, 2 * Math.PI); ctx.stroke();
 
-      // Sun
       ctx.save();
       ctx.shadowColor = "#ffcc00";
       ctx.shadowBlur = 30;
@@ -116,41 +142,34 @@
       const phobos = getPlanetPosition(mars.x, mars.y, phoR, 0.3189, "2025-01-01");
       const deimos = getPlanetPosition(mars.x, mars.y, deiR, 1.263, "2025-01-01");
 
-      function drawGlow(x, y, r, color) {
-        ctx.save();
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 20;
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill();
-        ctx.restore();
-      }
+      storeTrail('earth', earth);
+      storeTrail('moon', moon);
+      storeTrail('mars', mars);
+      storeTrail('phobos', phobos);
+      storeTrail('deimos', deimos);
+
+      drawTrail('earth', '63,169,245');
+      drawTrail('moon', '170,170,170');
+      drawTrail('mars', '237,37,52');
+      drawTrail('phobos', '204,204,204');
+      drawTrail('deimos', '136,136,136');
 
       drawGlow(earth.x, earth.y, 14, "#3fa9f5");
       drawLabel("Earth", earth.x, earth.y);
+      ctx.strokeStyle = "#333";
+      ctx.beginPath(); ctx.arc(earth.x, earth.y, moonR, 0, 2 * Math.PI); ctx.stroke();
       drawGlow(moon.x, moon.y, 5, "#aaa");
       drawLabel("Moon", moon.x, moon.y);
 
-      ctx.strokeStyle = "#333";
-      ctx.beginPath(); ctx.arc(earth.x, earth.y, moonR, 0, 2 * Math.PI); ctx.stroke();
-
       drawGlow(mars.x, mars.y, 14, "#ed2534");
       drawLabel("Mars", mars.x, mars.y);
-
+      ctx.beginPath(); ctx.arc(mars.x, mars.y, phoR, 0, 2 * Math.PI); ctx.stroke();
       drawGlow(phobos.x, phobos.y, 4, "#ccc");
       drawLabel("Phobos", phobos.x, phobos.y);
-      ctx.beginPath(); ctx.arc(mars.x, mars.y, phoR, 0, 2 * Math.PI); ctx.stroke();
-
+      ctx.beginPath(); ctx.arc(mars.x, mars.y, deiR, 0, 2 * Math.PI); ctx.stroke();
       drawGlow(deimos.x, deimos.y, 4, "#888");
       drawLabel("Deimos", deimos.x, deimos.y);
-      ctx.beginPath(); ctx.arc(mars.x, mars.y, deiR, 0, 2 * Math.PI); ctx.stroke();
 
-      // Trails
-      [earth, moon, mars, phobos, deimos].forEach(p => {
-        ctx.fillStyle = "rgba(255,255,255,0.2)";
-        ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, 2 * Math.PI); ctx.fill();
-      });
-
-      // Time
       const now = new Date();
       const h = now.getHours().toString().padStart(2, '0');
       const mnt = now.getMinutes().toString().padStart(2, '0');
