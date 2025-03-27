@@ -143,19 +143,19 @@
       const phobos = getPlanetPosition(mars.x, mars.y, phoR, 0.3189, "2025-01-01");
       const deimos = getPlanetPosition(mars.x, mars.y, deiR, 1.263, "2025-01-01");
 
+      ctx.strokeStyle = "#333";
+      ctx.beginPath(); ctx.arc(earth.x, earth.y, moonR, 0, 2 * Math.PI); ctx.stroke();
       drawGlow(earth.x, earth.y, 14, "#3fa9f5");
       drawLabel("Earth", earth.x, earth.y);
       drawGlow(moon.x, moon.y, 5, "#aaa");
       drawLabel("Moon", moon.x, moon.y);
-      ctx.strokeStyle = "#333";
-      ctx.beginPath(); ctx.arc(earth.x, earth.y, moonR, 0, 2 * Math.PI); ctx.stroke();
 
       drawGlow(mars.x, mars.y, 14, "#ed2534");
       drawLabel("Mars", mars.x, mars.y);
       ctx.beginPath(); ctx.arc(mars.x, mars.y, phoR, 0, 2 * Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.arc(mars.x, mars.y, deiR, 0, 2 * Math.PI); ctx.stroke();
       drawGlow(phobos.x, phobos.y, 4, "#ccc");
       drawLabel("Phobos", phobos.x, phobos.y);
-      ctx.beginPath(); ctx.arc(mars.x, mars.y, deiR, 0, 2 * Math.PI); ctx.stroke();
       drawGlow(deimos.x, deimos.y, 4, "#888");
       drawLabel("Deimos", deimos.x, deimos.y);
 
